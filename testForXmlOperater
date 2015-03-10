@@ -1,0 +1,24 @@
+//test for XmlOperater
+
+   XmlOperater xo = new XmlOperater("file.endpoint.template");
+		
+		Map<String, String> map = new HashMap<String, String>();
+		map.put("//flow[@name]", String.valueOf(flowId));
+		/*
+		 * 修改元素规则
+		 * "//"后跟元素的名称;"@"后跟需要修改的属性名称;"#"跟元素中name属性的值,用于区分相同名称的元素
+		 */
+		map.put("//file:connector[@autoDelete]#input", "true");
+		map.put("//file:connector[@recursive]#input", "false");
+		map.put("//file:connector[@streaming]#input", "false");
+		map.put("//file:connector[@streaming]#output", "false");
+		map.put("//file:connector[@outputAppend]#output", "false");
+	
+		map.put("//file:inbound-endpoint[@path]", "");
+		map.put("//file:inbound-endpoint[@encoding]", "UTF-8");
+		map.put("//file:inbound-endpoint[@moveToDirectory]", "");
+		map.put("//file:outbound-endpoint[@path]", "");
+		map.put("//file:outbound-endpoint[@encoding]", "");
+		 
+		xo.modifyAttrOfMap(map);
+		System.out.println("----------------xo.getXmlDoc().asXML():"+xo.getXmlDoc().asXML());
