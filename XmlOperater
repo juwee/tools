@@ -1,0 +1,145 @@
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.dom4j.Document;
+import org.dom4j.Element;
+import org.dom4j.XPath;
+
+/**
+ * XML操作工具类
+ * @Date: 2014-12-8
+ * @author zhuyongwei
+ */
+public class XmlOperater {
+	private String templateName = "";// 对应配置文件中模版路径名称
+	private String templateNameStr = "";// 对应配置文件中模版文件名称
+	private Document xmlDoc = null;// 模版dom
+
+	public String getTemplateNameStr() {
+		return templateNameStr;
+	}
+
+	public void setTemplateNameStr(String templateNameStr) {
+		this.templateNameStr = templateNameStr;
+	}
+
+	public Document getXmlDoc() {
+		return xmlDoc;
+	}
+
+	public void setXmlDoc(Document xmlDoc) {
+		this.xmlDoc = xmlDoc;
+	}
+
+	public XmlOperater(String templateName) {
+		super();
+		this.templateName = templateName;
+		initDoc();
+	}
+
+	/**
+	 * 初始化dom文档
+	 */
+	private void initDoc() {
+		templateNameStr = XmlUtil.getXml(templateName);
+		System.out.println("templateNameStr:" + templateNameStr);
+		// 先读取缓存
+		xmlDoc = (Document) CacheUtils.get(templateNameStr);// "jms.xml"
+		if (xmlDoc == null) {
+			//String path = XmlOperater.class.getResource("/").getPath();
+			String templatePath =  "/com/juwee/base/"	+ templateNameStr;
+			xmlDoc = XmlHelper.createDocumentByFilePath(templatePath);
+			CacheUtils.put(templateNameStr, xmlDoc);
+		}
+	}
+
+	/**
+	 * 修改一个元素的属性值
+	 * 
+	 * @param nodePath
+	 *            元素路径
+	 * @param newAttrValue
+	 *            对应元素的属性
+	 * @return
+	 */
+	public boolean modifyAttr(String nodePath, String newAttrValue) {
+
+		String attributeName = nodePath.substring(nodePath.indexOf("@") + 1,
+				nodePath.indexOf("]"));
+
+		if (nodePath.indexOf(":") < 0) { // 没有前缀 例如//flow[@name]
+			String xmlns = nodePath.substring(nodePath.indexOf("//") + 2,
+					nodePath.indexOf("["));
+			Map<String, String> map = new HashMap<String, String>();
+			// 获得命名空间
+			String nsURI = xmlDoc.getRootElement().getNamespaceURI();
+			map.put("xmlns", nsURI);
+			XPath x = xmlDoc.createXPath("//xmlns:" + xmlns);// 例如//xmlns:flow
+			x.setNamespaceURIs(map);
+			Element element = (Element) x.selectSingleNode(xmlDoc);
+			element.addAttribute(attributeName, newAttrValue);
+		} else {
+			//  例如： nodePath //file:connector[@autoDelete]#input
+			if (nodePath.indexOf("#") > -1) { //处理相同名称的元素
+				@SuppressWarnings("unchecked")
+				List<Element> list = xmlDoc.selectNodes(nodePath.substring(0, nodePath.indexOf("[")));//  //file:connector
+				for (int i = 0; i < list.size(); i++) {
+					Element e = list.get(i);
+					String nameValue = e.attributeValue("name");//input
+					if(nodePath.substring(nodePath.indexOf("#")+1).equals(nameValue)){
+						e.addAttribute(nodePath.substring(nodePath.indexOf("@")+1, nodePath.indexOf("]")), newAttrValue);
+					}
+				}
+			}else{
+				Element element = (Element) xmlDoc.selectSingleNode(nodePath);
+				element.addAttribute(attributeName, newAttrValue);
+			}
+			
+		}
+
+		return false;
+	}
+
+	/**
+	 * 修改多个元素的属性值
+	 * 
+	 * @param map
+	 *            : key 元素的路径, value 元素的属性
+	 * @return
+	 */
+	public boolean modifyAttrOfMap(Map<String, String> map) {
+		Iterator<Entry<String, String>> iter = map.entrySet().iterator();
+
+		while (iter.hasNext()) {
+			@SuppressWarnings("rawtypes")
+			Map.Entry entry = (Map.Entry) iter.next();
+			String nodePath = String.valueOf(entry.getKey());
+			String newAttrValue = String.valueOf(entry.getValue());
+			modifyAttr(nodePath, newAttrValue);
+			System.out.println("nodePath:" + nodePath + "  newAttrValue:"
+					+ newAttrValue);
+		}
+		/*
+		 * try {
+		 *//** 将document中的内容写入文件中 */
+		/*
+		 * XMLWriter writer = new XMLWriter(new FileWriter(new
+		 * File("C:\\Users\\Administrator\\Desktop\\jms-01-temp.xml")));
+		 * writer.write(xmlDoc); writer.close(); return true; } catch (Exception
+		 * ex) { ex.printStackTrace(); }
+		 */
+		return false;
+
+	}
+
+	public static void main(String[] args) {
+		XmlOperater xo = new XmlOperater("jms.endpoint.template");
+		xo.modifyAttr("/mule/jms:activemq-connector/@brokerURL",
+				"tcp://127.0.0.1");
+
+	}
+
+}
