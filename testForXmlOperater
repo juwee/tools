@@ -21,4 +21,4 @@
 		map.put("//file:outbound-endpoint[@encoding]", "");
 		 
 		xo.modifyAttrOfMap(map);
-		System.out.println("----------------xo.getXmlDoc().asXML():"+xo.getXmlDoc().asXML());
+		System.out.println("----------------xo.getXmlDoc().asXML():"+xo.getXmlDoc().asXML()); 
