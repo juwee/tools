@@ -20,7 +20,7 @@ public class XmlOperater {
 
 	public String getTemplateNameStr() {
 		return templateNameStr;
-	}
+	} 
 
 	public void setTemplateNameStr(String templateNameStr) {
 		this.templateNameStr = templateNameStr;
